@@ -1,0 +1,258 @@
+COMPONENT TodoApp() {
+    state todos Array = [];
+    state newTodo String = "";
+    state filter String = "all";
+
+    DATA todoStats = {
+        total: 0,
+        completed: 0,
+        remaining: 0
+    };
+    
+    ACTION updateStats() {
+        todoStats.total = todos.length;
+        todoStats.completed = todos.filter(todo => todo.completed).length;
+        todoStats.remaining = todoStats.total - todoStats.completed;
+    }
+    
+    ACTION addTodo() {
+        if (newTodo.trim() !== "") {
+            todos = [...todos, {
+                id: Date.now(),
+                text: newTodo,
+                completed: false
+            }];
+            newTodo = "";
+            updateStats();
+        }
+    }
+    
+    ACTION toggleTodo(id) {
+        todos = todos.map(todo => {
+            if (todo.id === id) {
+                return { ...todo, completed: !todo.completed };
+            }
+            return todo;
+        });
+        updateStats();
+    }
+    
+    ACTION deleteTodo(id) {
+        todos = todos.filter(todo => todo.id !== id);
+        updateStats();
+    }
+    
+    ACTION clearCompleted() {
+        todos = todos.filter(todo => !todo.completed);
+        updateStats();
+    }
+    
+    ACTION setFilter(newFilter) {
+        filter = newFilter;
+    }
+    
+    ON_LOAD {
+        // 初期ToDoアイテムを追加
+        todos = [
+            { id: 1, text: "CWebを学ぶ", completed: true },
+            { id: 2, text: "ToDoアプリを作成", completed: false },
+            { id: 3, text: "コードをリファクタリング", completed: false }
+        ];
+        updateStats();
+    }
+    
+    DISPLAY {
+        div(className="todo-app") {
+            h1 { "ToDoリスト" }
+            
+            div(className="add-todo") {
+                input(
+                    type="text",
+                    value={newTodo},
+                    onChange={e => newTodo = e.target.value},
+                    placeholder="新しいタスクを入力...",
+                    onKeyPress={e => {
+                        if (e.key === "Enter") addTodo();
+                    }}
+                )
+                button(onClick={addTodo}) { "追加" }
+            }
+            
+            div(className="filters") {
+                button(
+                    onClick={() => setFilter("all")},
+                    className={filter === "all" ? "active" : ""}
+                ) { "すべて" }
+                
+                button(
+                    onClick={() => setFilter("active")},
+                    className={filter === "active" ? "active" : ""}
+                ) { "未完了" }
+                
+                button(
+                    onClick={() => setFilter("completed")},
+                    className={filter === "completed" ? "active" : ""}
+                ) { "完了済み" }
+            }
+            
+            ul(className="todo-list") {
+                FOR_EACH(todo in getFilteredTodos()) {
+                    li(
+                        key={todo.id},
+                        className={todo.completed ? "completed" : ""}
+                    ) {
+                        input(
+                            type="checkbox",
+                            checked={todo.completed},
+                            onChange={() => toggleTodo(todo.id)}
+                        )
+                        span { todo.text }
+                        button(
+                            className="delete-btn",
+                            onClick={() => deleteTodo(todo.id)}
+                        ) { "×" }
+                    }
+                }
+            }
+            
+            div(className="todo-stats") {
+                p { 
+                    {"合計: " + todoStats.total + " タスク"}
+                    }
+                p { 
+                    {"完了: " + todoStats.completed} 
+                    }
+                p { 
+                    {"未完了: " + todoStats.remaining} 
+                    }
+                
+                SHOW_WHEN(todoStats.completed > 0) {
+                    button(
+                        className="clear-btn",
+                        onClick={clearCompleted}
+                    ) { "完了済みをクリア" }
+                }
+            }
+        }
+    }
+    
+    // フィルタリングされたToDoを取得する関数
+    ACTION getFilteredTodos() {
+        if (filter === "active") {
+            return todos.filter(todo => !todo.completed);
+        } else if (filter === "completed") {
+            return todos.filter(todo => todo.completed);
+        }
+        return todos;
+    }
+    
+    STYLES {
+        .todo-app {
+            maxWidth: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            fontFamily: 'Arial, sans-serif';
+        }
+        
+        h1 {
+            textAlign: center;
+            color: #333;
+        }
+        
+        .add-todo {
+            display: flex;
+            marginBottom: 20px;
+        }
+        
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            fontSize: 16px;
+            border: 1px solid #ddd;
+            borderRadius: 4px 0 0 4px;
+        }
+        
+        button {
+            padding: 10px 15px;
+            backgroundColor: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            fontSize: 16px;
+        }
+        
+        .add-todo button {
+            borderRadius: 0 4px 4px 0;
+        }
+        
+        .filters {
+            display: flex;
+            justifyContent: center;
+            marginBottom: 20px;
+        }
+        
+        .filters button {
+            backgroundColor: #f1f1f1;
+            color: #333;
+            margin: 0 5px;
+            borderRadius: 4px;
+        }
+        
+        .filters button.active {
+            backgroundColor: #4CAF50;
+            color: white;
+        }
+        
+        .todo-list {
+            listStyle: none;
+            padding: 0;
+        }
+        
+        li {
+            display: flex;
+            alignItems: center;
+            padding: 10px;
+            borderBottom: 1px solid #eee;
+        }
+        
+        li.completed span {
+            textDecoration: line-through;
+            color: #888;
+        }
+        
+        li input[type="checkbox"] {
+            marginRight: 10px;
+        }
+        
+        li span {
+            flex: 1;
+        }
+        
+        .delete-btn {
+            backgroundColor: transparent;
+            color: #ff4136;
+            border: none;
+            fontSize: 18px;
+            cursor: pointer;
+        }
+        
+        .todo-stats {
+            marginTop: 20px;
+            padding: 10px;
+            backgroundColor: #f9f9f9;
+            borderRadius: 4px;
+        }
+        
+        .clear-btn {
+            backgroundColor: #ff4136;
+            color: white;
+            padding: 5px 10px;
+            fontSize: 14px;
+            borderRadius: 4px;
+            marginTop: 10px;
+        }
+    }
+}
+
+// コンポーネントをエクスポート
+EXPORT(TodoApp);

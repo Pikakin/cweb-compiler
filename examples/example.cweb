@@ -1,0 +1,21 @@
+COMPONENT Counter() {
+    STATE count = 0;
+    
+    ACTION increment {
+        count = count + 1;
+    }
+    
+    ACTION decrement {
+        count = count - 1;
+    }
+    
+    DISPLAY {
+        <div>
+            <h1>カウンター: {count}</h1>
+            <button onClick={increment}>増加</button>
+            <button onClick={decrement}>減少</button>
+        </div>
+    }
+}
+
+EXPORT(Counter);
